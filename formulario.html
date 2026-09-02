@@ -330,7 +330,10 @@
 
 <script>
 (function(){
-  const CHAVE_ARMAZENAMENTO = "efeitoHarmonia_respostas";
+  // URL pública do Web Service no Render.
+  // Depois de criar o backend, troque pelo endereço real, por exemplo:
+  // https://formulariobullying-api.onrender.com
+  const API_URL = "https://SEU-BACKEND.onrender.com";
 
   const form = document.getElementById('formPesquisa');
   const outrosCheck = document.getElementById('p3-outros-check');
@@ -374,7 +377,7 @@
     return ok;
   }
 
-  form.addEventListener('submit', function(e){
+  form.addEventListener('submit', async function(e){
     e.preventDefault();
     if(!valido()) return;
 
@@ -402,16 +405,27 @@
       p10_sugestao: dados.get('p10').trim()
     };
 
-    let respostas = [];
     try{
-      respostas = JSON.parse(localStorage.getItem(CHAVE_ARMAZENAMENTO)) || [];
-    }catch(err){
-      respostas = [];
-    }
-    respostas.push(resposta);
-    localStorage.setItem(CHAVE_ARMAZENAMENTO, JSON.stringify(respostas));
+      const respostaHttp = await fetch(API_URL + '/api/respostas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(resposta)
+      });
 
-    window.location.href = 'obrigado.html';
+      if(!respostaHttp.ok){
+        let mensagem = 'Não foi possível enviar sua resposta.';
+        try{
+          const erro = await respostaHttp.json();
+          if(erro && erro.error) mensagem = erro.error;
+        }catch(_){}
+        throw new Error(mensagem);
+      }
+
+      window.location.href = 'obrigado.html';
+    }catch(err){
+      alert('Não foi possível enviar sua resposta agora. Verifique sua conexão e tente novamente.');
+      console.error(err);
+    }
   });
 })();
 </script>

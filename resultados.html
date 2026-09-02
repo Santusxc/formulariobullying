@@ -275,7 +275,7 @@
     </div>
 
     <div class="vazio" id="vazio" style="display:none;">
-      Nenhuma resposta registrada neste dispositivo ainda.
+      Nenhuma resposta registrada ainda.
     </div>
 
     <footer class="rodape">Efeito Harmonia • Painel interno • Não compartilhe esta página</footer>
@@ -283,10 +283,10 @@
 
 <script>
 (function(){
-  // ⚠️ Troque esta senha antes de usar/publicar o site.
-  const SENHA_ACESSO = "harmonia2026";
-  const CHAVE_ARMAZENAMENTO = "efeitoHarmonia_respostas";
-  const CHAVE_SESSAO = "efeitoHarmonia_autenticado";
+  // URL pública do Web Service no Render.
+  // Use exatamente a URL do seu backend.
+  const API_URL = "https://SEU-BACKEND.onrender.com";
+  const CHAVE_SESSAO = "efeitoHarmonia_token";
 
   const telaSenha = document.getElementById('telaSenha');
   const painel = document.getElementById('painel');
@@ -294,21 +294,61 @@
   const erroSenha = document.getElementById('erroSenha');
   const btnEntrar = document.getElementById('btnEntrar');
 
-  function entrar(){
-    if(campoSenha.value === SENHA_ACESSO){
-      sessionStorage.setItem(CHAVE_SESSAO, "1");
+  async function entrar(){
+    erroSenha.style.display = 'none';
+    btnEntrar.disabled = true;
+    btnEntrar.textContent = 'Entrando...';
+
+    try{
+      const resposta = await fetch(API_URL + '/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ senha: campoSenha.value })
+      });
+
+      const dados = await resposta.json();
+
+      if(!resposta.ok || !dados.token){
+        throw new Error(dados.error || 'Senha incorreta.');
+      }
+
+      sessionStorage.setItem(CHAVE_SESSAO, dados.token);
+      campoSenha.value = '';
       mostrarPainel();
-    } else {
+    }catch(err){
+      erroSenha.textContent = err.message || 'Senha incorreta. Tente novamente.';
       erroSenha.style.display = 'block';
+    }finally{
+      btnEntrar.disabled = false;
+      btnEntrar.textContent = 'Entrar';
     }
   }
   btnEntrar.addEventListener('click', entrar);
   campoSenha.addEventListener('keydown', function(e){ if(e.key === 'Enter') entrar(); });
 
-  function pegarRespostas(){
-    try{
-      return JSON.parse(localStorage.getItem(CHAVE_ARMAZENAMENTO)) || [];
-    }catch(err){ return []; }
+  async function pegarRespostas(){
+    const token = sessionStorage.getItem(CHAVE_SESSAO);
+    if(!token) throw new Error('Sessão expirada. Faça login novamente.');
+
+    const resposta = await fetch(API_URL + '/api/respostas', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+
+    if(!resposta.ok){
+      if(resposta.status === 401){
+        sessionStorage.removeItem(CHAVE_SESSAO);
+        throw new Error('Sessão expirada. Faça login novamente.');
+      }
+      let mensagem = 'Erro ao carregar as respostas.';
+      try{
+        const erro = await resposta.json();
+        if(erro && erro.error) mensagem = erro.error;
+      }catch(_){}
+      throw new Error(mensagem);
+    }
+
+    const dados = await resposta.json();
+    return Array.isArray(dados) ? dados : [];
   }
 
   function formatarLista(arr){
@@ -411,18 +451,21 @@
     }
   }
 
-  function renderizar(){
-    const todasRespostas = pegarRespostas();
-    popularFiltros(todasRespostas);
-
-    const respostas = todasRespostas.filter(respostaCorresponde);
-
+  async function renderizar(){
     const corpo = document.getElementById('corpoTabela');
     const vazio = document.getElementById('vazio');
     const cartoes = document.getElementById('cartoes');
 
     corpo.innerHTML = '';
     cartoes.innerHTML = '';
+    vazio.style.display = 'none';
+    document.querySelector('.tabela-scroll').style.display = 'block';
+
+    try{
+      const todasRespostas = await pegarRespostas();
+    popularFiltros(todasRespostas);
+
+    const respostas = todasRespostas.filter(respostaCorresponde);
 
     const total = respostas.length;
     const jaSofreu = contar(respostas, 'p1_sofreu', 'Sim');
@@ -445,7 +488,7 @@
     if(total === 0){
       vazio.style.display = 'block';
       vazio.textContent = todasRespostas.length === 0
-        ? 'Nenhuma resposta registrada neste dispositivo ainda.'
+        ? 'Nenhuma resposta registrada ainda.'
         : 'Nenhuma resposta encontrada para os filtros selecionados.';
       document.querySelector('.tabela-scroll').style.display = 'none';
       return;
@@ -470,6 +513,13 @@
         '<td>' + (r.p10_sugestao || '—') + '</td>';
       corpo.appendChild(tr);
     });
+    }catch(err){
+      corpo.innerHTML = '';
+      cartoes.innerHTML = '';
+      document.querySelector('.tabela-scroll').style.display = 'none';
+      vazio.style.display = 'block';
+      vazio.textContent = err.message || 'Erro ao carregar as respostas.';
+    }
   }
 
   filtroTurmaEl.addEventListener('change', renderizar);
@@ -493,26 +543,41 @@
   }
 
   // Sessão já autenticada nesta aba?
-  if(sessionStorage.getItem(CHAVE_SESSAO) === "1"){
+  if(sessionStorage.getItem(CHAVE_SESSAO)){
     mostrarPainel();
   }
 
   document.getElementById('btnAtualizar').addEventListener('click', renderizar);
 
-  document.getElementById('btnLimpar').addEventListener('click', function(){
-    if(confirm('Tem certeza que deseja apagar TODAS as respostas deste dispositivo? Essa ação não pode ser desfeita.')){
-      localStorage.removeItem(CHAVE_ARMAZENAMENTO);
-      renderizar();
+  document.getElementById('btnLimpar').addEventListener('click', async function(){
+    if(confirm('Tem certeza que deseja apagar TODAS as respostas? Essa ação não pode ser desfeita.')){
+      const token = sessionStorage.getItem(CHAVE_SESSAO);
+      try{
+        const resposta = await fetch(API_URL + '/api/respostas', {
+          method: 'DELETE',
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if(!resposta.ok) throw new Error('Não foi possível apagar as respostas.');
+        await renderizar();
+      }catch(err){
+        alert(err.message || 'Erro ao apagar as respostas.');
+      }
     }
   });
 
-  document.getElementById('btnExportarJSON').addEventListener('click', function(){
-    const dados = JSON.stringify(pegarRespostas(), null, 2);
-    baixarArquivo(dados, 'respostas_efeito_harmonia.json', 'application/json');
+  document.getElementById('btnExportarJSON').addEventListener('click', async function(){
+    try{
+      const respostas = await pegarRespostas();
+      const dados = JSON.stringify(respostas, null, 2);
+      baixarArquivo(dados, 'respostas_efeito_harmonia.json', 'application/json');
+    }catch(err){
+      alert(err.message || 'Erro ao exportar.');
+    }
   });
 
-  document.getElementById('btnExportarCSV').addEventListener('click', function(){
-    const respostas = pegarRespostas();
+  document.getElementById('btnExportarCSV').addEventListener('click', async function(){
+    try{
+      const respostas = await pegarRespostas();
     const cabecalho = ['Data/Hora','Turma','Q1_Sofreu','Q2_Presenciou','Q3_Locais','Q4_Tipos_Agressao','Q5_Afeta_Saude','Q6_Sabe_Denunciar','Q7_Piada_Brincadeira','Q8_Ajuda_Vitima','Q9_Escola_Suficiente','Q10_Sugestao'];
     const linhas = respostas.map(function(r){
       return [
@@ -531,7 +596,10 @@
       ].map(function(v){ return '"' + (v === undefined || v === null ? '' : v) + '"'; }).join(',');
     });
     const csv = cabecalho.join(',') + '\n' + linhas.join('\n');
-    baixarArquivo('\uFEFF' + csv, 'respostas_efeito_harmonia.csv', 'text/csv;charset=utf-8;');
+      baixarArquivo('\uFEFF' + csv, 'respostas_efeito_harmonia.csv', 'text/csv;charset=utf-8;');
+    }catch(err){
+      alert(err.message || 'Erro ao exportar.');
+    }
   });
 
   function baixarArquivo(conteudo, nome, tipo){
