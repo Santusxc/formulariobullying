@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resultados (restrito) | Efeito Harmonia</title>
+<style>
+  :root{
+    --roxo: #6c4ab6;
+    --roxo-escuro: #4a2e8f;
+    --rosa: #e85d9c;
+    --fundo: #f6f3fb;
+    --texto: #2e2438;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(160deg, var(--fundo) 0%, #ece3f9 100%);
+    color: var(--texto);
+    min-height:100vh;
+    padding: 40px 16px 80px;
+    position:relative;
+  }
+  .marca-canto{
+    position: fixed;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--roxo-escuro);
+    opacity: 0.55;
+    font-size: 13px;
+    text-transform: uppercase;
+  }
+  .top-left{ top: 14px; left: 18px; }
+  .bottom-right{ bottom: 14px; right: 18px; }
+
+  .wrap{ max-width: 1100px; margin: 0 auto; }
+
+  /* Tela de senha */
+  #telaSenha{
+    max-width: 380px;
+    margin: 12vh auto 0;
+    background:#fff;
+    border-radius: 18px;
+    box-shadow: 0 10px 35px rgba(74,46,143,0.15);
+    padding: 36px;
+    text-align:center;
+  }
+  #telaSenha h1{ font-size:20px; color:var(--roxo-escuro); margin-bottom:6px;}
+  #telaSenha p{ font-size:13.5px; color:#6a5d80; margin-bottom:20px; }
+  #telaSenha input{
+    width:100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e3dbf3;
+    font-size:14px;
+    margin-bottom:14px;
+  }
+  #telaSenha button{
+    width:100%;
+    padding: 12px;
+    background: linear-gradient(135deg, var(--roxo), var(--rosa));
+    color:#fff;
+    font-weight:700;
+    border:none;
+    border-radius: 10px;
+    cursor:pointer;
+  }
+  #erroSenha{ color:#c0392b; font-size:13px; margin-top:-6px; margin-bottom:10px; display:none; }
+
+  /* Painel */
+  #painel{ display:none; }
+
+  header.topo{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom: 26px;
+  }
+  .selo{
+    display:inline-block;
+    background: linear-gradient(135deg, var(--roxo), var(--rosa));
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius: 999px;
+  }
+  h1.titulo{ font-size:24px; color:var(--roxo-escuro); margin:8px 0 0; }
+
+  .acoes{ display:flex; gap:10px; flex-wrap:wrap; }
+  .btn{
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid #d9cdf0;
+    background:#fff;
+    color: var(--roxo-escuro);
+    font-weight:600;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .btn.principal{
+    background: linear-gradient(135deg, var(--roxo), var(--rosa));
+    color:#fff;
+    border:none;
+  }
+  .btn.perigo{ color:#c0392b; border-color:#f0c9c2; }
+
+  .cartoes{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px,1fr));
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .cartao{
+    background:#fff;
+    border-radius:14px;
+    padding: 18px;
+    box-shadow: 0 6px 18px rgba(74,46,143,0.08);
+  }
+  .cartao .num{ font-size:26px; font-weight:800; color:var(--roxo); }
+  .cartao .rotulo{ font-size:12.5px; color:#8b7ba3; margin-top:4px; }
+
+  .filtros{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:flex-end;
+    gap: 14px;
+    background:#fff;
+    border-radius:14px;
+    padding: 16px 18px;
+    box-shadow: 0 6px 18px rgba(74,46,143,0.08);
+    margin-bottom: 20px;
+  }
+  .filtro-grupo{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+    min-width: 190px;
+  }
+  .filtro-grupo label{
+    font-size:12px;
+    font-weight:700;
+    color: var(--roxo-escuro);
+    text-transform:uppercase;
+    letter-spacing:.4px;
+  }
+  .filtro-grupo select, .filtro-grupo input[type=text]{
+    padding: 9px 10px;
+    border-radius: 8px;
+    border: 1px solid #e3dbf3;
+    font-family: inherit;
+    font-size: 13.5px;
+    background: var(--fundo);
+  }
+  #filtros .btn{ margin-left:auto; }
+
+  .tabela-scroll{
+    background:#fff;
+    border-radius: 14px;
+    box-shadow: 0 6px 18px rgba(74,46,143,0.08);
+    overflow-x:auto;
+    margin-bottom:30px;
+  }
+  table{ border-collapse: collapse; width:100%; font-size:13px; min-width: 1400px; }
+  th, td{
+    text-align:left;
+    padding: 10px 12px;
+    border-bottom: 1px solid #efe9f9;
+    white-space: normal;
+    max-width: 220px;
+  }
+  th{
+    background: var(--fundo);
+    color: var(--roxo-escuro);
+    position: sticky; top:0;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+  }
+  tr:hover td{ background:#faf8fe; }
+
+  .vazio{
+    text-align:center;
+    padding: 60px 20px;
+    color:#8b7ba3;
+    background:#fff;
+    border-radius:14px;
+  }
+
+  footer.rodape{
+    text-align:center;
+    font-size:12px;
+    color:#a599b8;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+  <div class="marca-canto top-left">Efeito Harmonia</div>
+  <div class="marca-canto bottom-right">Efeito Harmonia</div>
+
+  <!-- TELA DE SENHA -->
+  <div id="telaSenha">
+    <div class="selo" style="margin-bottom:14px;">Acesso restrito</div>
+    <h1>Painel de Resultados</h1>
+    <p>Página exclusiva do grupo <strong>Efeito Harmonia</strong>. Digite a senha para ver as respostas.</p>
+    <input type="password" id="campoSenha" placeholder="Senha de acesso">
+    <div id="erroSenha">Senha incorreta. Tente novamente.</div>
+    <button id="btnEntrar">Entrar</button>
+  </div>
+
+  <!-- PAINEL DE RESULTADOS -->
+  <div class="wrap" id="painel">
+    <header class="topo">
+      <div>
+        <span class="selo">Restrito • Efeito Harmonia</span>
+        <h1 class="titulo">Resultados da Pesquisa</h1>
+      </div>
+      <div class="acoes">
+        <button class="btn" id="btnAtualizar">Atualizar</button>
+        <button class="btn principal" id="btnExportarJSON">Exportar JSON</button>
+        <button class="btn principal" id="btnExportarCSV">Exportar CSV</button>
+        <button class="btn perigo" id="btnLimpar">Apagar tudo</button>
+      </div>
+    </header>
+
+    <div class="cartoes" id="cartoes"></div>
+
+    <div class="filtros" id="filtros">
+      <div class="filtro-grupo">
+        <label for="filtroTurma">Filtrar por turma</label>
+        <select id="filtroTurma">
+          <option value="">Todas as turmas</option>
+        </select>
+      </div>
+      <div class="filtro-grupo">
+        <label for="filtroPergunta">Filtrar por pergunta</label>
+        <select id="filtroPergunta">
+          <option value="">— Escolha uma pergunta —</option>
+        </select>
+      </div>
+      <div class="filtro-grupo" id="filtroRespostaWrap" style="display:none;">
+        <label for="filtroResposta" id="filtroRespostaLabel">Resposta</label>
+        <select id="filtroRespostaSelect" style="display:none;"></select>
+        <input type="text" id="filtroRespostaTexto" style="display:none;" placeholder="Digite para buscar...">
+      </div>
+      <button class="btn" id="btnLimparFiltros">Limpar filtros</button>
+    </div>
+
+    <div class="tabela-scroll">
+      <table id="tabela">
+        <thead>
+          <tr>
+            <th>Data/Hora</th>
+            <th>Turma</th>
+            <th>1. Já sofreu</th>
+            <th>2. Já presenciou</th>
+            <th>3. Locais frequentes</th>
+            <th>4. Tipos de agressão</th>
+            <th>5. Afeta saúde emocional</th>
+            <th>6. Sabe denunciar</th>
+            <th>7. Piada como brincadeira</th>
+            <th>8. Ajuda a vítima</th>
+            <th>9. Escola faz o suficiente</th>
+            <th>10. Sugestão</th>
+          </tr>
+        </thead>
+        <tbody id="corpoTabela"></tbody>
+      </table>
+    </div>
+
+    <div class="vazio" id="vazio" style="display:none;">
+      Nenhuma resposta registrada neste dispositivo ainda.
+    </div>
+
+    <footer class="rodape">Efeito Harmonia • Painel interno • Não compartilhe esta página</footer>
+  </div>
+
+<script>
+(function(){
+  // ⚠️ Troque esta senha antes de usar/publicar o site.
+  const SENHA_ACESSO = "harmonia2026";
+  const CHAVE_ARMAZENAMENTO = "efeitoHarmonia_respostas";
+  const CHAVE_SESSAO = "efeitoHarmonia_autenticado";
+
+  const telaSenha = document.getElementById('telaSenha');
+  const painel = document.getElementById('painel');
+  const campoSenha = document.getElementById('campoSenha');
+  const erroSenha = document.getElementById('erroSenha');
+  const btnEntrar = document.getElementById('btnEntrar');
+
+  function entrar(){
+    if(campoSenha.value === SENHA_ACESSO){
+      sessionStorage.setItem(CHAVE_SESSAO, "1");
+      mostrarPainel();
+    } else {
+      erroSenha.style.display = 'block';
+    }
+  }
+  btnEntrar.addEventListener('click', entrar);
+  campoSenha.addEventListener('keydown', function(e){ if(e.key === 'Enter') entrar(); });
+
+  function pegarRespostas(){
+    try{
+      return JSON.parse(localStorage.getItem(CHAVE_ARMAZENAMENTO)) || [];
+    }catch(err){ return []; }
+  }
+
+  function formatarLista(arr){
+    if(!arr || !arr.length) return '—';
+    return arr.join(', ');
+  }
+
+  function formatarData(iso){
+    const d = new Date(iso);
+    return d.toLocaleString('pt-BR');
+  }
+
+  function contar(respostas, campo, valor){
+    return respostas.filter(function(r){ return r[campo] === valor; }).length;
+  }
+
+  // Definição das perguntas para os filtros
+  const PERGUNTAS = [
+    { chave: 'turma', rotulo: 'Turma', tipo: 'texto' },
+    { chave: 'p1_sofreu', rotulo: '1. Já sofreu bullying/racismo', tipo: 'unica', opcoes: ['Sim','Não','Prefiro não responder'] },
+    { chave: 'p2_presenciou', rotulo: '2. Já presenciou', tipo: 'unica', opcoes: ['Sim','Não'] },
+    { chave: 'p3_locais', rotulo: '3. Locais frequentes', tipo: 'multipla', opcoes: ['Escola','Internet','Trabalho','Locais públicos'] },
+    { chave: 'p4_tipos_agressao', rotulo: '4. Tipos de agressão', tipo: 'multipla', opcoes: ['Bullying verbal','Bullying físico','Bullying psicológico','Cyberbullying','Racismo'] },
+    { chave: 'p5_afeta_saude_emocional', rotulo: '5. Afeta saúde emocional', tipo: 'unica', opcoes: ['Sim','Não','Não sei'] },
+    { chave: 'p6_sabe_denunciar', rotulo: '6. Sabe a quem denunciar', tipo: 'unica', opcoes: ['Sim','Não'] },
+    { chave: 'p7_piadas_como_brincadeira', rotulo: '7. Piada como brincadeira', tipo: 'unica', opcoes: ['Sim','Não'] },
+    { chave: 'p8_ajuda_vitima', rotulo: '8. Ajuda a vítima', tipo: 'unica', opcoes: ['Sim, sempre','Às vezes','Não','Nunca presenciei'] },
+    { chave: 'p9_escola_faz_suficiente', rotulo: '9. Escola faz o suficiente', tipo: 'unica', opcoes: ['Sim','Não','Em parte'] },
+    { chave: 'p10_sugestao', rotulo: '10. Sugestão (busca por texto)', tipo: 'texto' }
+  ];
+
+  const filtroTurmaEl = document.getElementById('filtroTurma');
+  const filtroPerguntaEl = document.getElementById('filtroPergunta');
+  const filtroRespostaWrap = document.getElementById('filtroRespostaWrap');
+  const filtroRespostaLabel = document.getElementById('filtroRespostaLabel');
+  const filtroRespostaSelect = document.getElementById('filtroRespostaSelect');
+  const filtroRespostaTexto = document.getElementById('filtroRespostaTexto');
+
+  let perguntasPopuladas = false;
+
+  function popularFiltros(respostas){
+    // Turmas únicas
+    const turmasUnicas = Array.from(new Set(respostas.map(function(r){ return r.turma; }).filter(Boolean))).sort();
+    const valorAtualTurma = filtroTurmaEl.value;
+    filtroTurmaEl.innerHTML = '<option value="">Todas as turmas</option>' +
+      turmasUnicas.map(function(t){ return '<option value="' + t.replace(/"/g,'&quot;') + '">' + t + '</option>'; }).join('');
+    if(turmasUnicas.includes(valorAtualTurma)) filtroTurmaEl.value = valorAtualTurma;
+
+    if(!perguntasPopuladas){
+      filtroPerguntaEl.innerHTML = '<option value="">— Escolha uma pergunta —</option>' +
+        PERGUNTAS.filter(function(p){ return p.chave !== 'turma'; })
+          .map(function(p){ return '<option value="' + p.chave + '">' + p.rotulo + '</option>'; }).join('');
+      perguntasPopuladas = true;
+    }
+  }
+
+  function atualizarCampoResposta(){
+    const chave = filtroPerguntaEl.value;
+    if(!chave){
+      filtroRespostaWrap.style.display = 'none';
+      return;
+    }
+    const def = PERGUNTAS.find(function(p){ return p.chave === chave; });
+    filtroRespostaWrap.style.display = 'flex';
+    filtroRespostaLabel.textContent = 'Resposta';
+
+    if(def.tipo === 'texto'){
+      filtroRespostaSelect.style.display = 'none';
+      filtroRespostaTexto.style.display = 'block';
+    } else {
+      filtroRespostaTexto.style.display = 'none';
+      filtroRespostaSelect.style.display = 'block';
+      filtroRespostaSelect.innerHTML = '<option value="">Todas as respostas</option>' +
+        def.opcoes.map(function(o){ return '<option value="' + o.replace(/"/g,'&quot;') + '">' + o + '</option>'; }).join('');
+    }
+  }
+
+  function respostaCorresponde(r){
+    const turmaSelecionada = filtroTurmaEl.value;
+    if(turmaSelecionada && r.turma !== turmaSelecionada) return false;
+
+    const chave = filtroPerguntaEl.value;
+    if(!chave) return true;
+    const def = PERGUNTAS.find(function(p){ return p.chave === chave; });
+
+    if(def.tipo === 'texto'){
+      const termo = filtroRespostaTexto.value.trim().toLowerCase();
+      if(!termo) return true;
+      const valor = (r[chave] || '').toString().toLowerCase();
+      return valor.includes(termo);
+    } else if(def.tipo === 'multipla'){
+      const valorSel = filtroRespostaSelect.value;
+      if(!valorSel) return true;
+      const lista = r[chave] || [];
+      return lista.some(function(item){ return item === valorSel || item.indexOf(valorSel) === 0; });
+    } else {
+      const valorSel = filtroRespostaSelect.value;
+      if(!valorSel) return true;
+      return r[chave] === valorSel;
+    }
+  }
+
+  function renderizar(){
+    const todasRespostas = pegarRespostas();
+    popularFiltros(todasRespostas);
+
+    const respostas = todasRespostas.filter(respostaCorresponde);
+
+    const corpo = document.getElementById('corpoTabela');
+    const vazio = document.getElementById('vazio');
+    const cartoes = document.getElementById('cartoes');
+
+    corpo.innerHTML = '';
+    cartoes.innerHTML = '';
+
+    const total = respostas.length;
+    const jaSofreu = contar(respostas, 'p1_sofreu', 'Sim');
+    const jaPresenciou = contar(respostas, 'p2_presenciou', 'Sim');
+    const naoSabeDenunciar = contar(respostas, 'p6_sabe_denunciar', 'Não');
+
+    const info = [
+      { num: total, rotulo: 'Respostas (filtro atual)' },
+      { num: jaSofreu, rotulo: 'Já sofreram bullying/racismo' },
+      { num: jaPresenciou, rotulo: 'Já presenciaram algum caso' },
+      { num: naoSabeDenunciar, rotulo: 'Não sabem a quem denunciar' },
+    ];
+    info.forEach(function(item){
+      const div = document.createElement('div');
+      div.className = 'cartao';
+      div.innerHTML = '<div class="num">' + item.num + '</div><div class="rotulo">' + item.rotulo + '</div>';
+      cartoes.appendChild(div);
+    });
+
+    if(total === 0){
+      vazio.style.display = 'block';
+      vazio.textContent = todasRespostas.length === 0
+        ? 'Nenhuma resposta registrada neste dispositivo ainda.'
+        : 'Nenhuma resposta encontrada para os filtros selecionados.';
+      document.querySelector('.tabela-scroll').style.display = 'none';
+      return;
+    }
+    vazio.style.display = 'none';
+    document.querySelector('.tabela-scroll').style.display = 'block';
+
+    respostas.slice().reverse().forEach(function(r){
+      const tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + formatarData(r.dataEnvio) + '</td>' +
+        '<td>' + (r.turma || '—') + '</td>' +
+        '<td>' + (r.p1_sofreu || '—') + '</td>' +
+        '<td>' + (r.p2_presenciou || '—') + '</td>' +
+        '<td>' + formatarLista(r.p3_locais) + '</td>' +
+        '<td>' + formatarLista(r.p4_tipos_agressao) + '</td>' +
+        '<td>' + (r.p5_afeta_saude_emocional || '—') + '</td>' +
+        '<td>' + (r.p6_sabe_denunciar || '—') + '</td>' +
+        '<td>' + (r.p7_piadas_como_brincadeira || '—') + '</td>' +
+        '<td>' + (r.p8_ajuda_vitima || '—') + '</td>' +
+        '<td>' + (r.p9_escola_faz_suficiente || '—') + '</td>' +
+        '<td>' + (r.p10_sugestao || '—') + '</td>';
+      corpo.appendChild(tr);
+    });
+  }
+
+  filtroTurmaEl.addEventListener('change', renderizar);
+  filtroPerguntaEl.addEventListener('change', function(){
+    atualizarCampoResposta();
+    renderizar();
+  });
+  filtroRespostaSelect.addEventListener('change', renderizar);
+  filtroRespostaTexto.addEventListener('input', renderizar);
+  document.getElementById('btnLimparFiltros').addEventListener('click', function(){
+    filtroTurmaEl.value = '';
+    filtroPerguntaEl.value = '';
+    atualizarCampoResposta();
+    renderizar();
+  });
+
+  function mostrarPainel(){
+    telaSenha.style.display = 'none';
+    painel.style.display = 'block';
+    renderizar();
+  }
+
+  // Sessão já autenticada nesta aba?
+  if(sessionStorage.getItem(CHAVE_SESSAO) === "1"){
+    mostrarPainel();
+  }
+
+  document.getElementById('btnAtualizar').addEventListener('click', renderizar);
+
+  document.getElementById('btnLimpar').addEventListener('click', function(){
+    if(confirm('Tem certeza que deseja apagar TODAS as respostas deste dispositivo? Essa ação não pode ser desfeita.')){
+      localStorage.removeItem(CHAVE_ARMAZENAMENTO);
+      renderizar();
+    }
+  });
+
+  document.getElementById('btnExportarJSON').addEventListener('click', function(){
+    const dados = JSON.stringify(pegarRespostas(), null, 2);
+    baixarArquivo(dados, 'respostas_efeito_harmonia.json', 'application/json');
+  });
+
+  document.getElementById('btnExportarCSV').addEventListener('click', function(){
+    const respostas = pegarRespostas();
+    const cabecalho = ['Data/Hora','Turma','Q1_Sofreu','Q2_Presenciou','Q3_Locais','Q4_Tipos_Agressao','Q5_Afeta_Saude','Q6_Sabe_Denunciar','Q7_Piada_Brincadeira','Q8_Ajuda_Vitima','Q9_Escola_Suficiente','Q10_Sugestao'];
+    const linhas = respostas.map(function(r){
+      return [
+        formatarData(r.dataEnvio),
+        r.turma,
+        r.p1_sofreu,
+        r.p2_presenciou,
+        formatarLista(r.p3_locais),
+        formatarLista(r.p4_tipos_agressao),
+        r.p5_afeta_saude_emocional,
+        r.p6_sabe_denunciar,
+        r.p7_piadas_como_brincadeira,
+        r.p8_ajuda_vitima,
+        r.p9_escola_faz_suficiente,
+        (r.p10_sugestao || '').replace(/"/g,'""')
+      ].map(function(v){ return '"' + (v === undefined || v === null ? '' : v) + '"'; }).join(',');
+    });
+    const csv = cabecalho.join(',') + '\n' + linhas.join('\n');
+    baixarArquivo('\uFEFF' + csv, 'respostas_efeito_harmonia.csv', 'text/csv;charset=utf-8;');
+  });
+
+  function baixarArquivo(conteudo, nome, tipo){
+    const blob = new Blob([conteudo], { type: tipo });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+})();
+</script>
+</body>
+</html>

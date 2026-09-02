@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pesquisa | Efeito Harmonia</title>
+<style>
+  :root{
+    --roxo: #6c4ab6;
+    --roxo-escuro: #4a2e8f;
+    --rosa: #e85d9c;
+    --fundo: #f6f3fb;
+    --texto: #2e2438;
+    --branco: #ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(160deg, var(--fundo) 0%, #ece3f9 100%);
+    color: var(--texto);
+    min-height:100vh;
+    position:relative;
+    padding: 40px 16px 100px;
+  }
+
+  /* Marca "Efeito Harmonia" nos cantos */
+  .marca-canto{
+    position: fixed;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--roxo-escuro);
+    opacity: 0.55;
+    font-size: 13px;
+    text-transform: uppercase;
+    z-index: 5;
+    user-select: none;
+    pointer-events: none;
+  }
+  .marca-canto.top-left{ top: 14px; left: 18px; }
+  .marca-canto.bottom-right{ bottom: 14px; right: 18px; }
+
+  .container{
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--branco);
+    border-radius: 18px;
+    box-shadow: 0 10px 35px rgba(74,46,143,0.15);
+    padding: 40px 36px;
+    position: relative;
+    overflow: hidden;
+  }
+  .container::before{
+    content:"";
+    position:absolute;
+    top:-60px; right:-60px;
+    width:160px; height:160px;
+    background: radial-gradient(circle, var(--rosa) 0%, transparent 70%);
+    opacity: 0.25;
+  }
+
+  .selo{
+    display:inline-block;
+    background: linear-gradient(135deg, var(--roxo), var(--rosa));
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+  }
+
+  h1{
+    font-size: 26px;
+    margin: 0 0 6px;
+    color: var(--roxo-escuro);
+  }
+  .subtitulo{
+    font-size: 15px;
+    color: #6a5d80;
+    margin-bottom: 30px;
+    line-height:1.5;
+  }
+
+  fieldset{
+    border: none;
+    padding: 0;
+    margin: 0 0 28px;
+  }
+  legend{
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 12px;
+    color: var(--texto);
+    padding:0;
+  }
+  .num{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:24px;height:24px;
+    background: var(--roxo);
+    color:#fff;
+    border-radius:50%;
+    font-size:12px;
+    margin-right:8px;
+    vertical-align:middle;
+  }
+
+  .opcoes label{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background: var(--fundo);
+    border: 1px solid #e3dbf3;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    cursor:pointer;
+    font-size:14.5px;
+    transition: all .15s ease;
+  }
+  .opcoes label:hover{
+    border-color: var(--roxo);
+    background:#efe8fb;
+  }
+  .opcoes input{
+    width:17px; height:17px;
+    accent-color: var(--roxo);
+    flex-shrink:0;
+  }
+
+  textarea{
+    width:100%;
+    min-height: 110px;
+    border-radius: 10px;
+    border: 1px solid #e3dbf3;
+    padding: 12px 14px;
+    font-family: inherit;
+    font-size: 14.5px;
+    resize: vertical;
+    background: var(--fundo);
+  }
+  textarea:focus, input:focus{
+    outline: 2px solid var(--roxo);
+  }
+
+  .dica{
+    font-size:12.5px;
+    color:#8b7ba3;
+    margin: -6px 0 12px;
+  }
+
+  .outro-campo{
+    margin-top: -2px;
+    margin-bottom: 8px;
+  }
+  .outro-campo input[type=text]{
+    width:100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #e3dbf3;
+    font-family: inherit;
+    font-size: 14px;
+  }
+
+  button[type=submit]{
+    width:100%;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--roxo), var(--rosa));
+    color:#fff;
+    font-weight:700;
+    font-size:16px;
+    border:none;
+    border-radius: 12px;
+    cursor:pointer;
+    letter-spacing:0.5px;
+    box-shadow: 0 8px 20px rgba(108,74,182,0.35);
+    transition: transform .15s ease;
+  }
+  button[type=submit]:hover{ transform: translateY(-2px); }
+
+  .erro{
+    color: #c0392b;
+    font-size: 13px;
+    margin-top: -4px;
+    margin-bottom: 8px;
+    display:none;
+  }
+
+  footer.rodape{
+    text-align:center;
+    font-size:12px;
+    color:#a599b8;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="marca-canto top-left">Efeito Harmonia</div>
+  <div class="marca-canto bottom-right">Efeito Harmonia</div>
+
+  <div class="container">
+    <span class="selo">Pesquisa • Efeito Harmonia</span>
+    <h1>Bullying e Racismo: sua opinião importa</h1>
+    <p class="subtitulo">Este formulário é totalmente anônimo e faz parte de uma pesquisa do grupo <strong>Efeito Harmonia</strong> sobre bullying e racismo. Responda com sinceridade — não existe resposta certa ou errada.</p>
+
+    <form id="formPesquisa" novalidate>
+
+      <fieldset>
+        <legend><span class="num">•</span>Turma</legend>
+        <p class="dica">Digite sua turma (ex: 9º A, 3º EM B, etc.)</p>
+        <div class="outro-campo">
+          <input type="text" name="turma" id="turma" placeholder="Digite sua turma" required>
+        </div>
+        <div class="erro">Digite sua turma.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">1</span>Você já sofreu bullying ou racismo?</legend>
+        <div class="opcoes">
+          <label><input type="radio" name="p1" value="Sim" required> Sim</label>
+          <label><input type="radio" name="p1" value="Não"> Não</label>
+          <label><input type="radio" name="p1" value="Prefiro não responder"> Prefiro não responder</label>
+        </div>
+        <div class="erro">Selecione uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">2</span>Você já presenciou alguém sofrendo bullying ou racismo?</legend>
+        <div class="opcoes">
+          <label><input type="radio" name="p2" value="Sim" required> Sim</label>
+          <label><input type="radio" name="p2" value="Não"> Não</label>
+        </div>
+        <div class="erro">Selecione uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">3</span>Onde esses casos acontecem com mais frequência?</legend>
+        <p class="dica">Você pode marcar mais de uma opção.</p>
+        <div class="opcoes">
+          <label><input type="checkbox" name="p3" value="Escola"> Escola</label>
+          <label><input type="checkbox" name="p3" value="Internet"> Internet</label>
+          <label><input type="checkbox" name="p3" value="Trabalho"> Trabalho</label>
+          <label><input type="checkbox" name="p3" value="Locais públicos"> Locais públicos</label>
+          <label><input type="checkbox" name="p3" value="Outros" id="p3-outros-check"> Outros</label>
+        </div>
+        <div class="outro-campo" id="p3-outros-campo" style="display:none;">
+          <input type="text" id="p3-outros-texto" placeholder="Qual outro local?">
+        </div>
+        <div class="erro">Selecione ao menos uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">4</span>Qual tipo de agressão você já presenciou ou sofreu?</legend>
+        <p class="dica">Você pode marcar mais de uma opção.</p>
+        <div class="opcoes">
+          <label><input type="checkbox" name="p4" value="Bullying verbal"> Bullying verbal</label>
+          <label><input type="checkbox" name="p4" value="Bullying físico"> Bullying físico</label>
+          <label><input type="checkbox" name="p4" value="Bullying psicológico"> Bullying psicológico</label>
+          <label><input type="checkbox" name="p4" value="Cyberbullying"> Cyberbullying</label>
+          <label><input type="checkbox" name="p4" value="Racismo"> Racismo</label>
+        </div>
+        <div class="erro">Selecione ao menos uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">5</span>Você acredita que bullying e racismo podem afetar a saúde emocional da vítima?</legend>
+        <div class="opcoes">
+          <label><input type="radio" name="p5" value="Sim" required> Sim</label>
+          <label><input type="radio" name="p5" value="Não"> Não</label>
+          <label><input type="radio" name="p5" value="Não sei"> Não sei</label>
+        </div>
+        <div class="erro">Selecione uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">6</span>Você sabe a quem pedir ajuda ou denunciar casos de bullying ou racismo?</legend>
+        <div class="opcoes">
+          <label><input type="radio" name="p6" value="Sim" required> Sim</label>
+          <label><input type="radio" name="p6" value="Não"> Não</label>
+        </div>
+        <div class="erro">Selecione uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">7</span>Você já viu piadas ofensivas ou comentários preconceituosos sendo tratados como "brincadeira"?</legend>
+        <div class="opcoes">
+          <label><input type="radio" name="p7" value="Sim" required> Sim</label>
+          <label><input type="radio" name="p7" value="Não"> Não</label>
+        </div>
+        <div class="erro">Selecione uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">8</span>Quando presencia uma situação de bullying ou racismo, você costuma ajudar a vítima?</legend>
+        <div class="opcoes">
+          <label><input type="radio" name="p8" value="Sim, sempre" required> Sim, sempre</label>
+          <label><input type="radio" name="p8" value="Às vezes"> Às vezes</label>
+          <label><input type="radio" name="p8" value="Não"> Não</label>
+          <label><input type="radio" name="p8" value="Nunca presenciei"> Nunca presenciei</label>
+        </div>
+        <div class="erro">Selecione uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">9</span>Na sua opinião, a escola faz o suficiente para combater o bullying e o racismo?</legend>
+        <div class="opcoes">
+          <label><input type="radio" name="p9" value="Sim" required> Sim</label>
+          <label><input type="radio" name="p9" value="Não"> Não</label>
+          <label><input type="radio" name="p9" value="Em parte"> Em parte</label>
+        </div>
+        <div class="erro">Selecione uma opção.</div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span class="num">10</span>O que poderia ser feito para diminuir o bullying e o racismo na sociedade?</legend>
+        <textarea name="p10" id="p10" placeholder="Escreva sua opinião aqui..." required></textarea>
+        <div class="erro">Escreva sua resposta.</div>
+      </fieldset>
+
+      <button type="submit">Enviar respostas</button>
+    </form>
+
+    <footer class="rodape">Efeito Harmonia • Pesquisa sobre Bullying e Racismo • Respostas anônimas</footer>
+  </div>
+
+<script>
+(function(){
+  const CHAVE_ARMAZENAMENTO = "efeitoHarmonia_respostas";
+
+  const form = document.getElementById('formPesquisa');
+  const outrosCheck = document.getElementById('p3-outros-check');
+  const outrosCampo = document.getElementById('p3-outros-campo');
+  const outrosTexto = document.getElementById('p3-outros-texto');
+
+  outrosCheck.addEventListener('change', function(){
+    outrosCampo.style.display = this.checked ? 'block' : 'none';
+    if(!this.checked) outrosTexto.value = '';
+  });
+
+  function mostrarErro(fieldset, mostrar){
+    const erro = fieldset.querySelector('.erro');
+    if(erro) erro.style.display = mostrar ? 'block' : 'none';
+  }
+
+  function valido(){
+    let ok = true;
+    form.querySelectorAll('fieldset').forEach(function(fs){
+      const radios = fs.querySelectorAll('input[type=radio]');
+      const checks = fs.querySelectorAll('input[type=checkbox]');
+      const textarea = fs.querySelector('textarea');
+      const campoTexto = fs.querySelector('input[type=text][required]');
+
+      if(campoTexto){
+        if(!campoTexto.value.trim()){ mostrarErro(fs, true); ok = false; }
+        else{ mostrarErro(fs, false); }
+      } else if(radios.length){
+        const marcado = fs.querySelector('input[type=radio]:checked');
+        if(!marcado){ mostrarErro(fs, true); ok = false; }
+        else{ mostrarErro(fs, false); }
+      } else if(checks.length){
+        const marcado = fs.querySelector('input[type=checkbox]:checked');
+        if(!marcado){ mostrarErro(fs, true); ok = false; }
+        else{ mostrarErro(fs, false); }
+      } else if(textarea){
+        if(!textarea.value.trim()){ mostrarErro(fs, true); ok = false; }
+        else{ mostrarErro(fs, false); }
+      }
+    });
+    return ok;
+  }
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!valido()) return;
+
+    const dados = new FormData(form);
+
+    const local3 = dados.getAll('p3');
+    if(local3.includes('Outros') && outrosTexto.value.trim()){
+      const idx = local3.indexOf('Outros');
+      local3[idx] = 'Outros: ' + outrosTexto.value.trim();
+    }
+
+    const resposta = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2,8),
+      dataEnvio: new Date().toISOString(),
+      turma: dados.get('turma').trim(),
+      p1_sofreu: dados.get('p1'),
+      p2_presenciou: dados.get('p2'),
+      p3_locais: local3,
+      p4_tipos_agressao: dados.getAll('p4'),
+      p5_afeta_saude_emocional: dados.get('p5'),
+      p6_sabe_denunciar: dados.get('p6'),
+      p7_piadas_como_brincadeira: dados.get('p7'),
+      p8_ajuda_vitima: dados.get('p8'),
+      p9_escola_faz_suficiente: dados.get('p9'),
+      p10_sugestao: dados.get('p10').trim()
+    };
+
+    let respostas = [];
+    try{
+      respostas = JSON.parse(localStorage.getItem(CHAVE_ARMAZENAMENTO)) || [];
+    }catch(err){
+      respostas = [];
+    }
+    respostas.push(resposta);
+    localStorage.setItem(CHAVE_ARMAZENAMENTO, JSON.stringify(respostas));
+
+    window.location.href = 'obrigado.html';
+  });
+})();
+</script>
+</body>
+</html>
