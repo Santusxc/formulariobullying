@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const crypto = require('crypto');
+const path = require('path');
 const { Pool } = require('pg');
 
 const app = express();
@@ -9,11 +10,36 @@ const PORT = process.env.PORT || 10000;
 app.use(express.json({ limit: '100kb' }));
 
 const frontendUrl = process.env.FRONTEND_URL || '*';
+
 app.use(cors({
   origin: frontendUrl === '*' ? true : frontendUrl,
   methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// ===============================
+// ARQUIVOS HTML
+// ===============================
+
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'formulario.html'));
+});
+
+app.get('/formulario', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'formulario.html'));
+});
+
+app.get('/resultados', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'resultados.html'));
+});
+
+app.get('/obrigado', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'obrigado.html'));
+});
+
+// ===============================
+// BANCO DE DADOS
+// ===============================
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -26,6 +52,10 @@ const pool = new Pool({
 // Reiniciar o Web Service invalida os tokens existentes.
 const adminTokens = new Map();
 const TOKEN_TTL_MS = 6 * 60 * 60 * 1000;
+
+// ===============================
+// INICIALIZAÇÃO DO BANCO
+// ===============================
 
 async function inicializarBanco() {
   if (!process.env.DATABASE_URL) {
@@ -52,8 +82,13 @@ async function inicializarBanco() {
   `);
 }
 
+// ===============================
+// AUTENTICAÇÃO
+// ===============================
+
 function autenticar(req, res, next) {
   const cabecalho = req.get('Authorization') || '';
+
   const token = cabecalho.startsWith('Bearer ')
     ? cabecalho.slice(7)
     : '';
@@ -61,20 +96,35 @@ function autenticar(req, res, next) {
   const expiracao = adminTokens.get(token);
 
   if (!token || !expiracao || expiracao < Date.now()) {
-    if (token) adminTokens.delete(token);
-    return res.status(401).json({ error: 'Não autorizado.' });
+    if (token) {
+      adminTokens.delete(token);
+    }
+
+    return res.status(401).json({
+      error: 'Não autorizado.'
+    });
   }
 
   next();
 }
 
+// ===============================
+// FUNÇÕES AUXILIARES
+// ===============================
+
 function texto(valor, max = 2000) {
-  if (typeof valor !== 'string') return '';
+  if (typeof valor !== 'string') {
+    return '';
+  }
+
   return valor.trim().slice(0, max);
 }
 
 function lista(valor, maxItens = 20) {
-  if (!Array.isArray(valor)) return [];
+  if (!Array.isArray(valor)) {
+    return [];
+  }
+
   return valor
     .filter(item => typeof item === 'string')
     .map(item => item.trim().slice(0, 300))
@@ -82,31 +132,58 @@ function lista(valor, maxItens = 20) {
     .slice(0, maxItens);
 }
 
+// ===============================
+// HEALTH CHECK
+// ===============================
+
 app.get('/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1');
-    res.json({ ok: true });
+
+    res.json({
+      ok: true
+    });
   } catch (_err) {
-    res.status(503).json({ ok: false });
+    res.status(503).json({
+      ok: false
+    });
   }
 });
+
+// ===============================
+// LOGIN ADMIN
+// ===============================
 
 app.post('/api/login', (req, res) => {
   const senhaCorreta = process.env.ADMIN_PASSWORD;
 
   if (!senhaCorreta) {
-    return res.status(500).json({ error: 'ADMIN_PASSWORD não configurada no servidor.' });
+    return res.status(500).json({
+      error: 'ADMIN_PASSWORD não configurada no servidor.'
+    });
   }
 
   if (req.body?.senha !== senhaCorreta) {
-    return res.status(401).json({ error: 'Senha incorreta.' });
+    return res.status(401).json({
+      error: 'Senha incorreta.'
+    });
   }
 
   const token = crypto.randomBytes(32).toString('hex');
-  adminTokens.set(token, Date.now() + TOKEN_TTL_MS);
 
-  res.json({ token });
+  adminTokens.set(
+    token,
+    Date.now() + TOKEN_TTL_MS
+  );
+
+  res.json({
+    token
+  });
 });
+
+// ===============================
+// ENVIAR RESPOSTA
+// ===============================
 
 app.post('/api/respostas', async (req, res) => {
   try {
@@ -117,12 +194,17 @@ app.post('/api/respostas', async (req, res) => {
     const turma = texto(r.turma, 100);
 
     if (!respostaId || !dataEnvio || !turma) {
-      return res.status(400).json({ error: 'Dados obrigatórios ausentes.' });
+      return res.status(400).json({
+        error: 'Dados obrigatórios ausentes.'
+      });
     }
 
     const data = new Date(dataEnvio);
+
     if (Number.isNaN(data.getTime())) {
-      return res.status(400).json({ error: 'Data inválida.' });
+      return res.status(400).json({
+        error: 'Data inválida.'
+      });
     }
 
     const p1 = texto(r.p1_sofreu, 100);
@@ -138,11 +220,35 @@ app.post('/api/respostas', async (req, res) => {
 
     await pool.query(
       `INSERT INTO respostas (
-        resposta_id, data_envio, turma, p1_sofreu, p2_presenciou,
-        p3_locais, p4_tipos_agressao, p5_afeta_saude_emocional,
-        p6_sabe_denunciar, p7_piadas_como_brincadeira,
-        p8_ajuda_vitima, p9_escola_faz_suficiente, p10_sugestao
-      ) VALUES ($1,$2,$3,$4,$5,$6::jsonb,$7::jsonb,$8,$9,$10,$11,$12,$13)
+        resposta_id,
+        data_envio,
+        turma,
+        p1_sofreu,
+        p2_presenciou,
+        p3_locais,
+        p4_tipos_agressao,
+        p5_afeta_saude_emocional,
+        p6_sabe_denunciar,
+        p7_piadas_como_brincadeira,
+        p8_ajuda_vitima,
+        p9_escola_faz_suficiente,
+        p10_sugestao
+      )
+      VALUES (
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6::jsonb,
+        $7::jsonb,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13
+      )
       ON CONFLICT (resposta_id) DO NOTHING`,
       [
         respostaId,
@@ -161,12 +267,25 @@ app.post('/api/respostas', async (req, res) => {
       ]
     );
 
-    res.status(201).json({ ok: true });
+    res.status(201).json({
+      ok: true
+    });
+
   } catch (err) {
-    console.error('Erro ao salvar resposta:', err.message);
-    res.status(500).json({ error: 'Erro interno ao salvar a resposta.' });
+    console.error(
+      'Erro ao salvar resposta:',
+      err.message
+    );
+
+    res.status(500).json({
+      error: 'Erro interno ao salvar a resposta.'
+    });
   }
 });
+
+// ===============================
+// BUSCAR RESPOSTAS
+// ===============================
 
 app.get('/api/respostas', autenticar, async (_req, res) => {
   try {
@@ -190,36 +309,74 @@ app.get('/api/respostas', autenticar, async (_req, res) => {
     `);
 
     res.json(rows);
+
   } catch (err) {
-    console.error('Erro ao buscar respostas:', err.message);
-    res.status(500).json({ error: 'Erro interno ao buscar as respostas.' });
+    console.error(
+      'Erro ao buscar respostas:',
+      err.message
+    );
+
+    res.status(500).json({
+      error: 'Erro interno ao buscar as respostas.'
+    });
   }
 });
+
+// ===============================
+// APAGAR RESPOSTAS
+// ===============================
 
 app.delete('/api/respostas', autenticar, async (_req, res) => {
   try {
     await pool.query('DELETE FROM respostas');
-    res.json({ ok: true });
+
+    res.json({
+      ok: true
+    });
+
   } catch (err) {
-    console.error('Erro ao apagar respostas:', err.message);
-    res.status(500).json({ error: 'Erro interno ao apagar as respostas.' });
+    console.error(
+      'Erro ao apagar respostas:',
+      err.message
+    );
+
+    res.status(500).json({
+      error: 'Erro interno ao apagar as respostas.'
+    });
   }
 });
 
+// ===============================
+// LIMPEZA DOS TOKENS
+// ===============================
+
 setInterval(() => {
   const agora = Date.now();
+
   for (const [token, expiracao] of adminTokens.entries()) {
-    if (expiracao < agora) adminTokens.delete(token);
+    if (expiracao < agora) {
+      adminTokens.delete(token);
+    }
   }
 }, 30 * 60 * 1000).unref();
+
+// ===============================
+// INICIAR SERVIDOR
+// ===============================
 
 inicializarBanco()
   .then(() => {
     app.listen(PORT, '0.0.0.0', () => {
-      console.log(`API Efeito Harmonia rodando na porta ${PORT}`);
+      console.log(
+        `API Efeito Harmonia rodando na porta ${PORT}`
+      );
     });
   })
   .catch((err) => {
-    console.error('Falha ao inicializar:', err.message);
+    console.error(
+      'Falha ao inicializar:',
+      err.message
+    );
+
     process.exit(1);
   });
